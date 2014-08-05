@@ -1,0 +1,274 @@
+<?php
+/*
+ * $file providers.module
+ *
+ */
+
+define('PROVIDERS_DEFAULT_API_URL', 'http://cmim.artemis-staging.com/api');
+define('PROVIDERS_DEFAULT_DEBUG_MODE', 1);
+
+/*
+ *
+ *Implements hook_menu()
+ */
+
+function providers_menu() {
+	$items = array();
+	$items['admin/config/services/providers'] = array (
+			'title' => 'Providers API settings',
+			'description' => t('Settings for Consumers Providers API, eg. endpoint URL/debug mode'),
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('providers_admin_form'),
+			'access arguments' => array('administer providers'),
+			'file' =>'providers.admin.inc',
+	);
+
+	$items['providers/api-test'] = array(
+			'title' => 'Providers API test',
+			'page callback' => 'providers_api_test_page',
+			'access arguments' => array('administer providers'),
+			'type' => MENU_CALLBACK,
+
+	);
+
+	$items['providerlist/autocomplete'] = array (
+		'title' => 'Autocomplete for Providers',
+		'description' => t('Gets providers as JSON format'),
+		'page callback' => 'providers_complete',
+		'access callback' => TRUE,
+	);
+
+	$items['specialties/providers'] = array (
+		'title' =>'Autocomplete for Provider Specialties',
+		'description' => t('Gets provider specialties as JSON format'),
+		'page callback' => 'providers_specialties',
+		'access callback' => TRUE,
+	);
+
+	return $items;
+}
+/**
+ * Implements hook_permission()
+ */
+	function providers_permission() {
+		return array(
+			'administer providers' => array(
+			'title' => ('Administer Providers'),
+			),
+		);
+	}
+
+/**
+ * Implements hook_views_api()
+ */
+	function providers_views_api() {
+		return array(
+			'api'=> 3,
+			'path' => drupal_get_path('module', 'providers'),
+		);
+	}
+
+/**
+ * Implements hook_ctools_plugin_directory()
+ */
+function providers_ctools_plugin_directory($module, $plugin) {
+	if ($module == 'ctools' && !empty($plugin)) {
+		return "plugins/$plugin";
+	}
+}
+/**
+* Providers Autocomplete
+*/
+function providers_complete($string = ''){
+   $matches = array();
+   $provider_api = variable_get('providers_api_url');
+   $trim_string = trim($string);
+   $request_string = urlencode($trim_string);
+   $output = drupal_http_request($provider_api . "/providers/autocomplete?keyword=" . $request_string);
+   $decoded_output = json_decode($output->data);
+      foreach ($decoded_output as $row) {
+      $matches[$row->Name] = check_plain($row->Name);
+      }
+   drupal_json_output($matches);
+}
+/**
+* Providers Specialties Autocomplete
+*/
+function providers_specialties($string = '') {
+   $provider_api = variable_get('providers_api_url');
+   $output = drupal_http_request($provider_api . "/providers/specialties/" . $string);
+   $decoded_output = json_decode($output->data);
+	foreach ($decoded_output as $row) {
+	$matches[$row->Id] = check_plain($row->Name);
+	}
+	drupal_json_output($matches);
+}
+
+/**
+ * Page Callback; api test page;
+ */
+function providers_api_test_page() {
+     $output_method = (module_exists('devel')) ? 'dsm' : 'var_dump';
+     //Test the request when we want to get a set of items
+     $request = new ProvidersAPIRequest();
+     $result = $request
+       ->addArgument ('zipcode', 49201)
+       ->addArgument ('radius', 15)
+       ->execute();
+
+     $output_method($result);
+
+
+     //Test the request when we want to get a certain item
+     $request = new ProvidersAPIRequest();
+     $result = $request
+      ->getItem(25984)
+      ->execute();
+
+     $output_method($result);
+
+	 $request = new ProvidersAPIRequest();
+	 $result = $request
+	  ->addArgument ('zipcode', 49201)
+	  ->addArgument ('radius', 15)
+	  ->execute();
+	 $languages = array();
+	 foreach($result as $object){
+	   foreach($object->Languages as $item){
+	    $languages[$item->Id] = $item->Name;
+	 }
+	}
+	$output_method($languages);
+     return t('Testing....');
+
+
+}
+function providers_views_pre_execute(&$view) {
+     $output_method = (module_exists('devel')) ? 'dsm' : 'var_dump';
+     $provider_api = variable_get('providers_api_url');
+     $output = drupal_http_request($provider_api . "/providers/specialties" );
+     $decoded_output = json_decode($output->data);
+  }
+  function providers_form_alter(&$form, &$form_state, $form_id) {
+  	//Test the form (don't use on production)
+  	// echo '<pre>';
+  	// print_r ($form);
+  	// echo '</pre>';
+	if($form_id == 'views_exposed_form'){
+		$form['secondary']['#collapsed'] = 1;
+		$form['secondary']['#attributes']['class'][] = 'row';
+		$form['secondary']['specialties']['#prefix']= '<div class="span5">';
+		$form['secondary']['specialties']['#suffix']= '</div>';
+		$form['secondary']['officetype']['#prefix']= '<div class="span3">';
+		$form['secondary']['officetype']['#suffix']= '</div>';
+		$form['secondary']['Languages']['#multiple'] = 1;
+		$form['specialties']['#multiple'] = 1;
+		$form['secondary']['specialties']['#multiple'] = 1;
+		$form['secondary']['hospitals']['#multiple'] = 1;
+		$form['secondary']['groups']['#multiple'] = 1;
+		$form['secondary']['Languages']['#prefix']= '<div class="row"><div class="span3">';
+		$form['secondary']['Languages']['#suffix']= '</div>';
+		$form['secondary']['gender_1']['#prefix']= '<div class="row"><div class="span3">';
+		$form['secondary']['gender_1']['#suffix']= '</div>';
+		$form['secondary']['gender']['#prefix']= '<div class="row"><div class="span3">';
+		$form['secondary']['gender']['#suffix']= '</div>';
+		$form['secondary']['type']['#prefix']= '<div class="span3">';
+		$form['secondary']['type']['#suffix']= '</div></div>';
+		$form['secondary']['keyword_1']['#prefix'] = '<div class="span4">';
+		$form['secondary']['keyword_1']['#suffix'] = '</div>';
+		$form['secondary']['keyword']['#prefix'] = '<div class="span4">';
+		$form['secondary']['keyword']['#suffix'] = '</div>';
+		$form['secondary']['Accepting_New_Patients']['#prefix']= '<div class="span3">';
+		$form['secondary']['Accepting_New_Patients']['#suffix']= '</div></div>';
+		$form['secondary']['newpatients']['#prefix']= '<div class="span3">';
+		$form['secondary']['newpatients']['#suffix']= '</div>';
+		$form['secondary']['hospitals']['#prefix']= '<div class="row"><div class="span3">';
+		$form['secondary']['hospitals']['#suffix']= '</div></div>';
+		$form['secondary']['groups']['#prefix']= '<div class="span3">';
+		$form['secondary']['groups']['#suffix']= '</div></div>';
+	}
+}
+/**
+* Implements hook_block_info()
+*/
+function providers_block_info(){
+	$blocks = array();
+	$blocks['providers_specialties'] = array(
+		'info'=>t('Providers Specialties a to z'),
+	);
+
+	return $blocks;
+}
+/**
+* Implements hook_block_view()
+*/
+function providers_block_view($delta = '') {
+	$block = array();
+	switch ($delta){
+	   case 'providers_specialties':
+		  $block['subject'] = '';
+		  $block['content'] = _providers_specialties_block_content();
+		  break;
+	}
+	return $block;
+}
+
+function _providers_specialties_block_content(){
+	if (isset($_GET['zipcode'])){
+		$zipcode = $_GET['zipcode'];
+	}
+	else {$zipcode = '';}
+
+	if (isset($_GET['radius'])){
+		$radius = $_GET['radius'];
+	}
+	else {$radius = '';}
+	$specialty = '';
+	$provider_api = variable_get('providers_api_url');
+	$output = drupal_http_request($provider_api . "/providers/specialties/" );
+	$decoded_output = json_decode($output->data);
+	foreach ($decoded_output as $row) {
+ 	    $matches[$row->Id] = $row->Name;
+		$specialty .= $row->Name[0];
+    }
+	print '<div id="tabs" class="row">';
+    print '<ul class="tabs-align">';
+	foreach(range('A', 'Z') as $letter){
+			$find = strpos($specialty, $letter);
+			$line = '<li';
+			if ($find === false)/*Check if this letter has no entries*/
+			{
+				$line = $line . ' data-isempty="true"';
+			}
+			$line = $line . '><a href="#tabs-'.$letter.'">'. $letter.'</a></li>';
+			print $line;
+	}
+	print '</ul>';
+
+	$previous = null;
+	$atoz = array();
+
+	$spec = 0;
+	foreach($matches as $id => $name) {
+		$spec++;
+		$firstLetter = substr($name, 0, 1);
+		if(($previous !== $firstLetter) && ($previous !== null)) {
+			echo '</div>';
+			echo '<div id="tabs-' .$firstLetter . '">';
+		}
+		if ($previous ==  null){
+			echo '<div id="tabs-' .$firstLetter . '">';
+
+		}
+
+		$previous = $firstLetter;
+		echo '<div class="specialcol"><a class="tab-search-link" href="/provider-directory/provider-specialty-search-results?zipcode=' . $zipcode . '&radius_1='.$radius . '&specialties%5B%5D=' . $id .  '&newpatients=1">' .$name . '</a></div>';
+
+
+	}
+	print '</div>';
+	print '</div>';
+	return;
+}
+
+

@@ -1,0 +1,30 @@
+name= FlyViews
+description = Creates a views query backend plugin, handlers, ctools plugins and can display external provider content
+core = 7.x
+
+;Core
+dependencies[] = dblog
+dependencies[] = image
+dependencies[] = menu
+
+
+;Contribs
+dependencies[] = admin_menu
+dependencies[] = admin_menu_toolbar
+dependencies[] = ctools
+dependencies[] = devel
+dependencies[] = features
+dependencies[] = get_directions
+dependencies[] = views
+dependencies[] = views_ui
+dependencies[] = quicktabs
+
+
+; Custom modules
+dependencies[] = providers
+dependencies[] = locations
+
+; Features
+dependencies[] = general_configuration
+
+files[] = flyviews.admin.inc

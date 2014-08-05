@@ -1,0 +1,365 @@
+<?php
+/*
+ * $file locations.module
+ *
+ */
+
+define('LOCATIONS_DEFAULT_API_URL', 'http://cmim.artemis-staging.com/api');
+define('LOCATIONS_DEFAULT_DEBUG_MODE', 1);
+
+
+/*
+ *Implements hook_menu()
+ */
+
+function locations_menu() {
+	$items = array();
+	$items['admin/config/services/locations'] = array (
+			'title' => 'Locations API settings',
+			'description' => t('Settings for Consumers Locations API, eg. endpoint URL/debug mode'),
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('locations_admin_form'),
+			'access arguments' => array('administer locations'),
+			'file' => 'locations.admin.inc',
+	);
+
+	$items['locations/api-test'] = array(
+			'title' => 'Locations API test',
+			'page callback' => 'locations_api_test_page',
+			'access arguments' => array('administer locations'),
+			'type' => MENU_CALLBACK,
+
+	);
+
+	$items['locations/autocomplete'] = array (
+		'title' => 'Autocomplete for locations',
+		'description' => t('Gets locations as JSON format'),
+		'page callback' => 'locations_complete',
+		'access callback' => TRUE,
+	);
+
+	$items['specialties/autocomplete'] = array (
+		'title' => 'Autocomplete for location specialties',
+		'description' => t('Gets location specialties as JSON format'),
+		'page callback' => 'locations_specialty',
+		'access callback' => TRUE,
+	);
+
+	return $items;
+}
+/**
+ * Implements hook_permission()
+ */
+	function locations_permission() {
+		return array(
+			'administer locations' => array(
+			'title' => ('Administer Locations'),
+			),
+		);
+	}
+
+/**
+ * Implements hook_views_api()
+ */
+	function locations_views_api() {
+		return array(
+			'api'=> 3.0,
+			//'path' => drupal_get_path('module', 'locations'),
+		);
+	}
+
+/**
+ * Implements hook_ctools_plugin_directory()
+ */
+	function locations_ctools_plugin_directory($module, $plugin) {
+		if ($module == 'ctools' && !empty($plugin)) {
+			return "plugins/$plugin";
+		}
+	}
+
+
+/*
+* Locations Autocomplete
+*/
+	function locations_complete($string = ''){
+		$location_api = variable_get('locations_api_url');
+    $trim_string = trim($string);
+		$request_string = urlencode($trim_string);
+		$output = drupal_http_request($location_api . "/locations/autocomplete?keyword=" . $request_string);
+		$decoded_output = json_decode($output->data);
+		foreach ($decoded_output as $row) {
+     		$matches[$row->Name] = check_plain($row->Name);
+  		}
+		$options = array(
+		'string' => $string,
+		'limit' => 10,
+		);
+		drupal_json_output($matches);
+	}
+
+/*
+* Location Specialties Autocomplete
+*/
+	function locations_specialty($string = ''){
+	   $location_api = variable_get('locations_api_url');
+	   $output = drupal_http_request($location_api . "/locations/specialties/" . $string);
+	   $decoded_output = json_decode($output->data);
+	   foreach ($decoded_output as $row) {
+	      $matches[$row->Id] = check_plain($row->Name);
+        }
+	   $options = array(
+	   'string' => $string,
+	   'limit' => 10,
+	   );
+	   drupal_json_output($matches);
+	}
+
+/**
+ * Page Callback; api test page;
+ */
+   function locations_api_test_page() {
+   	$output_method = (module_exists('devel')) ? 'dpm' : 'var_dump';
+
+   	//Test the request when we want to get a set of items
+   	$request = new LocationsAPIRequest();
+   	$result = $request
+   	  ->addArgument ('zipcode', 49201)
+   	  ->addArgument ('radius', 15)
+   	  ->execute();
+
+
+   	$output_method($result);
+
+   	//Test the request when we want to get a certain item
+   	$request = new LocationsAPIRequest();
+   	$result = $request
+   	 ->getItem(8278)
+   	 ->execute();
+
+   	$output_method($result);
+
+   		//Test the request when we want to get a certain item
+   	$request = new LocationsAPIRequest();
+   	$result = $request
+   	 ->getItem(8278)
+   	 ->execute();
+   	$output_location = $result->Name;
+   	$output_method($output_location);
+
+   	return t('Testing....');
+
+}
+
+/***
+* Adds Bootstrap elements to forms
+* And makes fields override to multiple select
+*/
+function locations_form_alter(&$form, &$form_state, $form_id) {
+
+	//Testing FORM show all form fields (on everything don't use on production)
+	// echo '<pre>';
+	// print_r($form);
+	// echo '</pre>';
+
+	if(($form['#id']) == 'views-exposed-form-find-a-specialty-center-page'){
+		$form['secondary']['#collapsed'] = 1;
+		$form['secondary']['Specialties']['#prefix']= '<div class="span5">';
+		$form['Specialties']['#multiple'] = 1;
+		$form['secondary']['officetypes']['#multiple'] = 1;
+		$form['secondary']['Languages']['#multiple'] = 1;
+		$form['secondary']['groups']['#multiple'] = 1;
+		$form['secondary']['Specialties']['#suffix']= '</div>';
+		$form['secondary']['officetypes']['#prefix']= '<div class="row"><div class="span3">';
+		$form['secondary']['officetypes']['#suffix']= '</div>';
+		$form['secondary']['Languages']['#prefix']= '<div class="span3">';
+		$form['secondary']['Languages']['#suffix']= '</div>';
+		$form['secondary']['groups']['#prefix'] = '<div class="span3">';
+		$form['secondary']['groups']['#suffix'] = '</div></div>';
+
+	}
+	if(($form['#id']) == 'views-exposed-form-find-a-place-page'){
+		$form['secondary']['#collapsed'] = 1;
+		$form['Specialties']['#multiple'] = 1;
+		$form['secondary']['officetypes']['#multiple'] = 1;
+		$form['secondary']['Languages']['#multiple'] = 1;
+		$form['secondary']['groups']['#multiple'] = 1;
+		$form['secondary']['Specialties']['#prefix']= '<div class="span5">';
+		$form['secondary']['Specialties']['#suffix']= '</div>';
+		$form['secondary']['Specialties']['#multiple'] = true;
+		$form['secondary']['officetypes']['#prefix']= '<div class="row"><div class="span3">';
+		$form['secondary']['officetypes']['#suffix']= '</div>';
+		$form['secondary']['Languages']['#prefix'] = '<div class="span3">';
+		$form['secondary']['Languages']['#suffix'] = '</div></div></div></div>';
+		$form['secondary']['groups']['#prefix'] = '<div class="row"><div class="span3">';
+		$form['secondary']['groups']['#suffix'] = '</div></div>';
+
+	}
+}
+
+/*
+* Sorts array while leaving ID's intact
+*/
+
+function aasort(&$array, $key){
+			$sorter = array();
+			$ret = array();
+			$key = '';
+			reset($array);
+			foreach($array as $ii =>$va){
+				$sorter[$ii]=$va[$key];
+			}
+			asort($sorter);
+			foreach($sorter as $ii=>$va){
+				$ret[$ii]=$array[$ii];
+			}
+			$array = $ret;
+}
+
+/*
+* formats phone numbers
+*/
+function us_phone($num){
+      $num = preg_replace('/[^0-9]/', '', $num);
+      $len = strlen($num);
+      if($len == 7)
+      $num = preg_replace('/([0-9]{3})([0-9]{4})/', '$1-$2', $num);
+      elseif($len == 10)
+      $num = preg_replace('/([0-9]{3})([0-9]{3})([0-9]{4})/', '($1) $2-$3', $num);
+    	return($num);
+}
+
+/*
+* Gets Office Type Image from office type ID
+*/
+function office_type($id){
+		$path = '/sites/all/modules/flyviews/modules/custom/files/';
+		if ( $id == 13 | $id == 7 ){
+			$path = $path . 'HOSPITAL.jpg';
+		}
+		elseif ( $id == 2 | $id == 17 | $id == 20  ){
+			$path = $path . 'CLINIC.jpg';
+		}
+		elseif ( $id == 3 ){
+			$path = $path . 'MEDICALSUPPLIES.jpg';
+		}
+		elseif( $id == 12 ){
+			$path = $path . 'HOSPICE.jpg';
+		}
+		elseif( $id == 5 ){
+			$path = $path . 'LABS.jpg';
+		}
+		elseif( $id == 1 ){
+			$path = $path . 'PHARM.jpg';
+		}
+		elseif( $id == 4 ){
+			$path = $path . 'PHYSICALTHE.jpg';
+		}
+		elseif( $id == 16 ){
+			$path = $path . 'XRAY.jpg';
+		}
+		elseif( $id == 6 ){
+			$path = $path . 'SKILLEDNURSING.jpg';
+		}
+		elseif( $id == 9 ){
+			$path = $path . 'URGENTCARE.jpg';
+		}
+		else{
+			$path = $path . 'CLINIC.jpg';
+		}
+		return($path);
+}
+
+
+
+
+/**
+* Implements hook_block_info()
+*/
+function locations_block_info(){
+	$blocks = array();
+	$blocks['locations_atoz'] = array(
+		'info'=>t('Locations Specialties a to z'),
+	);
+
+	return $blocks;
+}
+
+/**
+* Implements hook_block_view()
+*/
+function locations_block_view($delta = '') {
+	$block = array();
+	switch ($delta){
+	   case 'locations_atoz':
+		  $block['subject'] = '';
+		  $block['content'] = _locations_specialties_block_content();
+		  break;
+	}
+	return $block;
+}
+
+function _locations_specialties_block_content(){
+	if (isset($_GET['zipcode'])){
+		$zipcode = $_GET['zipcode'];
+	}
+	else {$zipcode = '';}
+
+	if (isset($_GET['radius'])){
+		$radius = $_GET['radius'];
+	}
+	else {$radius = '';}
+
+
+	//if (isset($radius) = $_GET['radius'];
+	$specialty = '';
+	$location_api = variable_get('locations_api_url');
+	$output = drupal_http_request($location_api . "/locations/specialties/" );
+	$decoded_output = json_decode($output->data);
+	foreach ($decoded_output as $row) {
+ 	    $matches[$row->Id] = $row->Name;
+		$specialty .= $row->Name[0];
+    }
+
+	print '<div id="alpha" class="row">';
+    print '<ul class="tabs-align">';
+		foreach(range('A', 'Z') as $letter){
+			$find = strpos($specialty, $letter);
+			$line = '<li';
+			if ($find === false)/*Check if this letter has no entries*/
+			{
+				$line = $line . ' data-isempty="true"';
+			}
+			$line = $line . '><a href="#alpha-'.$letter.'">'. $letter.'</a></li>';
+			print $line;
+		}
+	print '</ul>';
+
+	$previous = null;
+	$atoz = array();
+
+	$spec = 0;
+	foreach($matches as $id => $name) {
+		$spec++;
+		$firstLetter = substr($name, 0, 1);
+		if(($previous !== $firstLetter) && ($previous !== null)) {
+			echo '</div>';
+			echo '<div class="row" id="alpha-' .$firstLetter . '">';
+
+		}
+		if ($previous ==  null){
+			echo '<div class="row" id="alpha-' .$firstLetter . '">';
+
+		}
+
+		$previous = $firstLetter;
+		echo '<div class="specialcol"><a class="alpha-search-link" href="/provider-directory/location-specialties-search-results?zipcode=' . $zipcode . '&radius='.$radius.'&Specialties%5B%5D=' . $id .  '">' .$name . '</a></div>';
+
+
+	}
+	print '</div>';
+	return;
+}
+
+
+
+

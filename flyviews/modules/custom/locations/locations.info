@@ -1,0 +1,47 @@
+name = Locations
+description = Views Integration for Consumers API, creates Locations Search custom View
+core = 7.x
+package = FlyViews
+
+dependencies[] = ctools
+dependencies[] = views
+dependencies[] = chosen
+dependencies[] = getdirections
+dependencies[] = views_fieldsets
+
+stylesheets[all][] = locations.css
+
+files[] = locations.api.inc
+files[] = locations.admin.inc
+files[] = locations_views_plugin_query.inc
+
+;Handlers
+files[] = handlers/locations_views_handler_field.inc
+files[] = handlers/locations_views_handler_field_numeric.inc
+
+;Custom field handlers
+files[] = handlers/locations_views_handler_address.inc
+files[] = handlers/locations_views_handler_address_geocode.inc
+files[] = handlers/locations_views_handler_languages.inc
+files[] = handlers/locations_views_handler_latitude.inc
+files[] = handlers/locations_views_handler_longitude.inc
+files[] = handlers/locations_views_handler_phone.inc
+files[] = handlers/locations_views_handler_fax.inc
+files[] = handlers/locations_views_handler_distance.inc
+files[] = handlers/locations_views_handler_officetype.inc
+files[] = handlers/locations_views_handler_specialties.inc
+files[] = handlers/locations_views_handler_officetype_name.inc
+files[] = handlers/locations_views_handler_hours.inc
+files[] = handlers/locations_views_handler_field_groups.inc
+
+;Custom Filters
+files[] = handlers/locations_views_handler_filter_officetype.inc
+files[] = handlers/locations_views_handler_filter_numeric.inc
+files[] = handlers/locations_views_handler_filter_equality.inc
+files[] = handlers/locations_views_handler_filter_keyword.inc
+files[] = handlers/locations_views_handler_filter_keyword_specialty.inc
+files[] = handlers/locations_views_handler_filter_languages.inc
+files[] = handlers/locations_views_handler_filter_specialties.inc
+files[] = handlers/locations_views_handler_filter_zipcode.inc
+files[] = handlers/locations_views_handler_filter_radius.inc
+files[] = handlers/locations_views_handler_filter_groups.inc

@@ -1,0 +1,62 @@
+name = Providers
+description = Views Integration for Consumers API, creates Provider Search custom View
+core = 7.x
+package = FlyViews
+
+dependencies[] = ctools
+dependencies[] = views
+dependencies[] = chosen
+dependencies[] = getdirections
+dependencies[] = views_fieldsets
+
+files[] = providers.api.inc
+files[] = providers_views_plugin_query.inc
+files[] = handlers/providers_views_handler_field.inc
+
+;CUSTOM FIELDS
+files[] = handlers/providers_views_handler_location_one.inc
+files[] = handlers/providers_views_handler_location_two.inc
+files[] = handlers/providers_views_handler_location_three.inc
+files[] = handlers/providers_views_handler_location_four.inc
+files[] = handlers/providers_views_handler_location_five.inc
+files[] = handlers/providers_views_handler_location_six.inc
+files[] = handlers/providers_views_handler_location_seven.inc
+files[] = handlers/providers_views_handler_hours_one.inc
+files[] = handlers/providers_views_handler_degrees.inc
+files[] = handlers/providers_views_handler_educations.inc
+files[] = handlers/providers_views_handler_languages.inc
+files[] = handlers/providers_views_handler_providertype.inc
+files[] = handlers/providers_views_handler_specialties.inc
+files[] = handlers/providers_views_handler_gender.inc
+files[] = handlers/providers_views_handler_gender_name.inc
+files[] = handlers/providers_views_handler_distance.inc
+files[] = handlers/providers_views_handler_latitude.inc
+files[] = handlers/providers_views_handler_longitude.inc
+files[] = handlers/providers_views_handler_address.inc
+files[] = handlers/providers_views_handler_address_geocode.inc
+files[] = handlers/providers_views_handler_phone.inc
+files[] = handlers/providers_views_handler_fax.inc
+files[] = handlers/providers_views_handler_accepting_new.inc
+files[] = handlers/providers_views_handler_location_directions_two.inc
+files[] = handlers/providers_views_handler_provider_firstname.inc
+files[] = handlers/providers_views_handler_provider_lastname.inc
+files[] = handlers/providers_views_handler_boards.inc
+files[] = handlers/providers_views_handler_affiliations.inc
+files[] = handlers/providers_views_handler_field_numeric.inc
+files[] = handlers/providers_views_handler_field_zipcode.inc
+files[] = handlers/providers_views_handler_field_groups.inc
+
+;CUSTOM FILTERS
+files[] = handlers/providers_views_handler_filter_gender.inc
+files[] = handlers/providers_views_handler_filter_accepting_new.inc
+files[] = handlers/providers_views_handler_filter_languages.inc
+files[] = handlers/providers_views_handler_filter_keywords.inc
+files[] = handlers/providers_views_handler_filter_keyword_specialties.inc
+files[] = handlers/providers_views_handler_filter_equality.inc
+files[] = handlers/providers_views_handler_filter_equality_radius.inc
+files[] = handlers/providers_views_handler_filter_equality_type.inc
+files[] = handlers/providers_views_handler_filter_numeric.inc
+files[] = handlers/providers_views_handler_filter_zipcode.inc
+files[] = handlers/providers_views_handler_filter_groups.inc
+files[] = handlers/providers_views_handler_filter_affiliations.inc
+
